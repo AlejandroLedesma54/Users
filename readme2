@@ -1,0 +1,177 @@
+El Git-flow es una estrategia de ramificación que facilita la colaboración en el desarrollo de software y la gestión de versiones. En este caso, se propone un flujo de trabajo sencillo con tres tipos de ramas:
+
+1. Rama master
+Descripción: La rama master contiene la versión estable y en producción del código.
+Uso: Solo se realizan fusiones de versiones completas y funcionales, listas para producción.
+2. Rama develop
+Descripción: La rama develop es donde se integra el trabajo de desarrollo y se prepara para la siguiente versión de producción.
+Uso: Aquí se fusionan las ramas de características (feature) una vez que se completan y se prueban.
+3. Ramas feature
+Descripción: Las ramas feature se utilizan para desarrollar nuevas funcionalidades o cambios específicos en el código.
+Naming Convention: Para cada funcionalidad, se crea una rama feature con un nombre que describe la funcionalidad seguida del número de cédula o documento de identidad. Por ejemplo, si estás creando un CRUD de usuarios, la rama podría llamarse feature/users#12345678.
+Uso: Se crean a partir de la rama develop y, una vez completada la funcionalidad, se fusionan de vuelta en develop.
+Uso de ORM (Sequelize)
+Objetivo: Utilizar Sequelize como ORM (Object-Relational Mapping) para interactuar con la base de datos.
+Evaluación: Se evaluará el correcto funcionamiento de las entidades creadas. Esto incluye la definición de modelos, relaciones, y la ejecución de operaciones CRUD (Create, Read, Update, Delete).
+Uso de sintaxis adecuada de NodeJS y TypeScript
+Parámetro orientado a objetos: La mayoría del código debe ser escrito utilizando el paradigma orientado a objetos, empleando clases para definir la estructura y comportamiento de las entidades.
+Tipado: Todas las variables y funciones deben tener tipos explícitos definidos. Además, todas las clases deben implementar su respectiva interfaz para asegurar un diseño claro y consistente.
+Express: Utilizar Express como servidor web y enrutador para manejar las solicitudes HTTP.
+Ejemplo de flujo de trabajo Git-flow
+Crear la rama develop a partir de master:
+
+bash
+Copy code
+git checkout master
+git checkout -b develop
+Crear una nueva rama feature para una funcionalidad específica:
+
+bash
+Copy code
+git checkout develop
+git checkout -b feature/users#12345678
+Desarrollar la funcionalidad en la rama feature:
+
+typescript
+Copy code
+// Implementación de la funcionalidad...
+Cometer los cambios a la rama feature:
+
+bash
+Copy code
+git add .
+git commit -m "Implement user CRUD functionality"
+Fusionar la rama feature de vuelta a develop:
+
+bash
+Copy code
+git checkout develop
+git merge feature/users#12345678
+Eliminar la rama feature una vez fusionada:
+
+bash
+Copy code
+git branch -d feature/users#12345678
+Fusionar la rama develop a master cuando esté lista para producción:
+
+bash
+Copy code
+git checkout master
+git merge develop
+Ejemplo de implementación de una clase y su interfaz en TypeScript
+Definición de una interfaz IUser:
+typescript
+Copy code
+interface IUser {
+  id: number;
+  email: string;
+  password: string;
+  roleId: number;
+  validatePassword(password: string): boolean;
+}
+Implementación de la clase User:
+typescript
+Copy code
+import { Model, Column, Table, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { Role } from './Role';
+import bcrypt from 'bcryptjs';
+
+@Table
+class User extends Model implements IUser {
+  @Column
+  id!: number;
+
+  @Column
+  email!: string;
+
+  @Column
+  password!: string;
+
+  @ForeignKey(() => Role)
+  @Column
+  roleId!: number;
+
+  @BelongsTo(() => Role)
+  role!: Role;
+
+  validatePassword(password: string): boolean {
+    return bcrypt.compareSync(password, this.password);
+  }
+}
+Ejemplo de una ruta en Express
+Rutas de usuarios (src/routes/userRoutes.ts):
+typescript
+Copy code
+import { Router } from 'express';
+import { createUser, loginUser, getAllUsers, deleteUser, updateUser } from '../controllers/userController';
+import { authenticateJWT } from '../middleware/auth';
+
+const router = Router();
+
+router.post('/register', createUser);
+router.post('/login', loginUser);
+router.get('/', authenticateJWT, getAllUsers);
+router.delete('/:id', authenticateJWT, deleteUser);
+router.put('/:id', authenticateJWT, updateUser);
+
+export default router;
+Integración con Sequelize
+Configuración del ORM (src/config/database.ts):
+typescript
+Copy code
+import { Sequelize } from 'sequelize-typescript';
+import dotenv from 'dotenv';
+import { User, Role, Product, Cart, ProductCart, Order, Entity, Permission } from '../models';
+
+dotenv.config();
+
+const sequelize = new Sequelize({
+  dialect: 'mysql',
+  host: process.env.DB_HOST,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  models: [User, Role, Product, Cart, ProductCart, Order, Entity, Permission],
+  logging: false,
+});
+
+export default sequelize;
+Inicio del servidor (src/app.ts):
+typescript
+Copy code
+import express from 'express';
+import dotenv from 'dotenv';
+import sequelize from './config/database';
+import userRoutes from './routes/userRoutes';
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use('/users', userRoutes);
+
+sequelize.sync().then(() => {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}).catch((error) => {
+  console.error('Unable to connect to the database:', error);
+});
+Comandos útiles de Git
+Crear una nueva rama:
+bash
+Copy code
+git checkout -b feature/feature_name#document_id
+Agregar cambios y crear un commit:
+bash
+Copy code
+git add .
+git commit -m "Commit message"
+Fusionar una rama:
+bash
+Copy code
+git checkout develop
+git merge feature/feature_name#document_id
+Esta guía proporciona una estructura clara y organizada para el desarrollo del proyecto utilizando un flujo de trabajo de Git, ORM Sequelize y buenas prácticas de programación con NodeJS y TypeScript.
